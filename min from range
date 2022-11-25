@@ -1,0 +1,139 @@
+Problem Description- DSA 5 session 6
+Welcome to Lilliput, the land of tiny people. Here, the person with smaller height is considered more intelligent.
+You are given an array of N integers indicating all the Lilliputians standing in a straight line in positions 0 to n-1. The values of the array indicate
+the Lilliputian heights.
+You will be asked to do two types of actions - update of the form [u x h] and query of the form [q x y]. In the update action [u x h], you have to update 
+the height of the Lilliputian at index x to value h. In the query action [q x y], you have to output the most intelligent Lilliputian’s height in the index
+range between x to y (both inclusive).
+
+Sample Input 1
+5
+
+2 3 5 1 9
+
+4
+
+"q 0 2 " - input query is string
+
+"u 1 0"
+
+"q 1 4"
+
+"q 3 3"
+
+Sample Output 1
+2
+
+0
+
+1
+
+SOLUTION-
+
+import java.util.*;
+
+public class Lilliput {
+    // Implement Your solution Here
+    //Height of the segment tree will be logN. Since the tree is represented using array and 
+    //relation between parent and child indexes must be maintained, size of memory allocated for
+    // segment tree will be (2 * 2^(log2n)  1).
+    public static Vector<Integer> lilliput(int n, int heights[], int num_actions, String actions[]) {
+        //Height of segment tree lag n (base 2)
+        int x = (int) (Math.ceil(Math.log(n) / Math.log(2)));
+        //Maximum size of segment tree
+        //int max_size = 2 * (int) Math.pow(2, x) - 1;
+        int max_size = 4*n;
+        int[] arr = new int[max_size];
+        for(int i=0;i<max_size;i++){
+            arr[i]=Integer.MAX_VALUE;
+        }
+        arr = buildSegTree(arr,0,0,n-1,heights); 
+        Vector<Integer> ans = new Vector<>();
+        for(String action:actions){
+            String[] values = action.split("\\s+"); 
+            if(action.charAt(0)=='q'){
+                int l = Integer.parseInt(values[1]);
+                int r = Integer.parseInt(values[2]);
+                int z = query( 0,0,n-1,l,r,arr);
+                ans.add(z);
+            } 
+            else{
+                int i = Integer.parseInt(values[1]);
+                int val = Integer.parseInt(values[2]);
+                update( 0,0,n-1,i,val,arr);
+            }
+        }
+        return ans;
+    }
+
+    public static int[] buildSegTree(int[] arr, int idx,int l,int r,int[] heights){
+        if(l==r){ 
+            arr[idx]=heights[r];
+            return arr;
+        } 
+        int mid = (l+r)/2;
+        arr= buildSegTree(arr,2*idx +1,l,mid,heights);
+        arr= buildSegTree(arr,2*idx +2, mid+1,r,heights);
+        arr[idx] = Math.min(arr[2*idx +1],arr[2*idx+2]);
+        return arr;
+    }
+
+    // query function searching ans for range (l,r) in whole tree range(left,right)
+    public static int query(int idx,int left,int right,int l,int r,int[] arr){
+        // complete overlap
+        if(left>=l && right<=r){
+            return arr[idx];
+        }
+        // no overlap
+        if(r<left || l>right){
+            return Integer.MAX_VALUE;
+        }
+        // patial overlap
+        int mid=(left+right)/2; // reducing "tree" range not l,r
+        int leftans = query(2*idx+1,left,mid,l,r,arr);
+        int rightans = query (2*idx+2,mid+1,right,l,r,arr);
+        return Math.min(leftans,rightans);
+    }
+
+    // update function, idx,left,right are for segment tree and we have to change val at index i
+    public static void update(int idx,int left,int right,int i,int val,int[] arr){
+        if(left==right){
+            arr[idx]=val;
+            return;
+        }
+        int mid=(left+right)/2;
+        // we will go into either left or right subtree everytime; so time is O(logN)
+        if(i<=mid){  //go to left subtree bcz left subtree range is (left,mid)
+            update(idx*2+1,left,mid,i,val,arr);
+        }else{
+            update(idx*2+2, mid+1,right,i,val,arr);
+        }
+        arr[idx]= Math.min(arr[idx*2+1],arr[idx*2+2]);
+        return;
+    }
+
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n, q;
+
+        n = sc.nextInt();
+        int heights[] = new int[n];
+        for (int i = 0; i < n; i++) {
+            heights[i] = sc.nextInt();
+        }
+
+        q = sc.nextInt(); // Num actions
+        sc.nextLine();
+
+        String actions[] = new String[q];
+        for (int i = 0; i < q; i++) {
+            actions[i] = sc.nextLine();
+        }
+        sc.close();
+
+        Vector<Integer> answer = lilliput(n, heights, q, actions);
+        for (int i = 0; i < answer.size(); i++)
+            System.out.println(answer.get(i));
+    }
+}
